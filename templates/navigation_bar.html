@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Leave Management</title>
+
+  <!-- Bootstrap 5 -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f8;
+    }
+
+    .navbar {
+      background-color: #002231;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .navbar-brand label {
+      font-size: 1.2rem;
+      margin-left: 0.5rem;
+    }
+
+    .nav-link {
+      font-size: 1rem;
+      transition: 0.3s;
+    }
+
+    .nav-link:hover {
+      color: #ffdd57 !important;
+    }
+
+    .modal-content {
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-body label {
+      font-weight: 500;
+    }
+
+    .btn-success {
+      background-color: #1e3a8a;
+      border: none;
+    }
+
+    .btn-success:hover {
+      background-color: #163273;
+    }
+
+    h3 {
+      margin: 1rem 0;
+      font-weight: bold;
+      color: #1e3a8a;
+    }
+  </style>
+</head>
+<body>
+{% block body %}
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-md navbar-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand d-flex align-items-center" href="#">
+      <img
+        src="{{url_for('static', filename='email.png')}}"
+        alt="Logo"
+        style="height: 40px; width: 40px"
+        class="me-2"
+      />
+      <label class="text-white">Faculty Leave Management</label>
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarContent"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link text-light" href="#" id="home">Home</a>
+        </li>
+        <li class="nav-item">
+          {% if student %}
+          <a
+            class="nav-link"
+            style="color: rgb(100, 0, 0)"
+            data-bs-toggle="modal"
+            data-bs-target="#logoutModal"
+            ><b>{{student.0.0}}</b></a
+          >
+          {% elif faculty %}
+          <a
+            class="nav-link"
+            style="color: rgb(100, 0, 0)"
+            data-bs-toggle="modal"
+            data-bs-target="#logoutModal"
+            ><b>{{faculty.0.0}}</b></a
+          >
+          {% else %}
+          <a
+            class="nav-link text-light"
+            href="#"
+            data-bs-toggle="modal"
+            data-bs-target="#loginModal"
+            >Login</a
+          >
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- LOGOUT MODAL -->
+<div class="modal fade" id="logoutModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <h3 class="text-center">Logout</h3>
+      <div class="modal-body">
+        <form action="{{url_for('index')}}">
+          <p class="text-center fw-bold">Do you want to logout?</p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success w-50" type="submit">Logout</button>
+            <button
+              type="button"
+              class="btn btn-secondary w-50"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal fade" id="loginModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <h3 class="text-center">Login</h3>
+      <div class="modal-body">
+        <form action="{{url_for('login')}}" method="POST">
+          <div class="mb-3">
+            <label>ID:</label>
+            <input type="text" class="form-control" name="id_num" required />
+          </div>
+          <div class="mb-3">
+            <label>Password:</label>
+            <input
+              type="password"
+              class="form-control"
+              name="password"
+              required
+            />
+          </div>
+          <p>
+            Forgot password?
+            <a href="#" data-bs-toggle="modal" data-bs-target="#resetModal"
+              >Reset</a
+            >
+          </p>
+          <p>
+            Not registered?
+            <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal"
+              >Register</a
+            >
+          </p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success w-50" type="submit">Login</button>
+            <button
+              type="button"
+              class="btn btn-secondary w-50"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div class="modal fade" id="registerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <h3 class="text-center">Register</h3>
+      <div class="modal-body">
+        <form action="{{url_for('register')}}" method="POST">
+          <div class="mb-3">
+            <label>ID:</label>
+            <input type="text" class="form-control" name="id_num" required />
+          </div>
+          <div class="mb-3">
+            <label>Name:</label>
+            <input type="text" class="form-control" name="name" required />
+          </div>
+          <div class="mb-3">
+            <label>Email:</label>
+            <input type="email" class="form-control" name="email" required />
+          </div>
+          <div class="mb-3">
+            <label>Phone:</label>
+            <input type="text" class="form-control" name="phone" required />
+          </div>
+          <div class="mb-3">
+            <label>Password:</label>
+            <input
+              type="password"
+              class="form-control"
+              name="password"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label>Confirm Password:</label>
+            <input
+              type="password"
+              class="form-control"
+              name="confirm_password"
+              required
+            />
+          </div>
+          <p>
+            Already have an account?
+            <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal"
+              >Login</a
+            >
+          </p>
+          <p>
+            Forgot password?
+            <a href="#" data-bs-toggle="modal" data-bs-target="#resetModal"
+              >Reset</a
+            >
+          </p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success w-50" type="submit">Register</button>
+            <button
+              type="button"
+              class="btn btn-secondary w-50"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESET MODAL -->
+<div class="modal fade" id="resetModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <h3 class="text-center">Reset Password</h3>
+      <div class="modal-body">
+        <form action="{{url_for('reset')}}" method="POST">
+          <div class="mb-3">
+            <label>ID:</label>
+            <input type="text" class="form-control" name="id_num" required />
+          </div>
+          <div class="mb-3">
+            <label>Name:</label>
+            <input type="text" class="form-control" name="name" required />
+          </div>
+          <div class="mb-3">
+            <label>Email:</label>
+            <input type="email" class="form-control" name="email" required />
+          </div>
+          <div class="mb-3">
+            <label>Phone:</label>
+            <input type="text" class="form-control" name="phone" required />
+          </div>
+          <div class="mb-3">
+            <label>New Password:</label>
+            <input
+              type="password"
+              class="form-control"
+              name="password"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label>Confirm Password:</label>
+            <input
+              type="password"
+              class="form-control"
+              name="confirm_password"
+              required
+            />
+          </div>
+          <p>
+            Already have an account?
+            <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal"
+              >Login</a
+            >
+          </p>
+          <p>
+            Not registered?
+            <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal"
+              >Register</a
+            >
+          </p>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success w-50" type="submit">
+              Confirm Reset
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary w-50"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ERROR HANDLING -->
+{% if error=="umatched_password1" %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var modal = new bootstrap.Modal(document.getElementById("registerModal"));
+    modal.show();
+  });
+</script>
+{% endif %}
+{% if error=="incorrect_login_password" %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var modal = new bootstrap.Modal(document.getElementById("loginModal"));
+    modal.show();
+  });
+</script>
+{% endif %}
+
+{% endblock %}
+</body>
+</html>

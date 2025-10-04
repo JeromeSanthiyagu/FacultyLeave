@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <title>Faculty Leave Portal</title>
+  <link rel="icon" href="{{url_for('static', filename='email.png')}}" type="icon">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,shrink-to-fit=no">
+  <meta name="product" content="Online Leave Management System">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Faculty Leave Portal">
+  <meta property="og:description" content="Faculty Leave Management">
+</head>
+
+<body class="bg-light">
+{% block body %}
+
+  {% include 'navigation_bar.html' %}
+
+  {# Flash Messages #}
+  {% with messages= get_flashed_messages() %}
+    {% if messages %}
+      <div class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 shadow" style="z-index:1055;">
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert"></button>
+        <strong>{{messages.0}}</strong>
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  {# ------------------ Student Portal ------------------ #}
+  {% if student %}
+  <div class="container py-5">
+    <div class="row align-items-center">
+      <div class="col-md-7 text-center text-md-start">
+        <h2 class="text-primary">Welcome</h2>
+        <h1 class="fw-bold">{{student.0.0}}</h1>
+      </div>
+      <div class="col-md-5 text-center">
+        <img src="{{url_for('static', filename='woman.png')}}" class="img-fluid" style="max-width:200px;">
+      </div>
+    </div>
+  </div>
+
+  <div class="container pb-5">
+    <div class="card shadow p-4">
+      <h2 class="h3 text-center text-primary mb-4">Leave Application</h2>
+      <form action="{{url_for('apply_leave')}}" method="POST">
+        <input type="hidden" name="id_num" value="{{student.0.0}}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label"><strong>From Date</strong></label>
+            <input type="date" class="form-control bg-warning-subtle" name="from_date">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label"><strong>To Date</strong></label>
+            <input type="date" class="form-control bg-warning-subtle" name="to_date">
+          </div>
+        </div>
+        <div class="mt-3">
+          <textarea class="form-control bg-warning-subtle" name="reason" rows="4"
+            placeholder="Reason for applying leave (optional)..."></textarea>
+        </div>
+        <div class="text-center mt-4">
+          <button class="btn btn-primary px-5" type="submit">Apply for Leave</button>
+        </div>
+      </form>
+
+      {% if student.0.1!="checked" %}
+      <form action="{{url_for('history')}}" method="POST" class="mt-3">
+        <input type="hidden" name="id_num" value="{{student.0.0}}">
+        <div class="text-center">
+          <button class="btn btn-warning px-5" type="submit">Check Previous Leaves</button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if student.0.1=="checked" %}
+  <div class="container pb-5">
+    <h2 class="text-center text-primary mb-4">Previous Leaves</h2>
+    <div class="table-responsive shadow rounded">
+      <table class="table table-striped table-hover align-middle bg-white">
+        <thead class="table-primary">
+          <tr>
+            <th>Leave ID</th>
+            <th>From Date</th>
+            <th>To Date</th>
+            <th>Reason</th>
+            <th>Action</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in previous %}
+          <tr>
+            <td>{{row.0}}</td>
+            <td>{{row.2}}</td>
+            <td>{{row.3}}</td>
+            <td>{{row.4}}</td>
+            <td>
+              <form action="{{url_for('delete')}}" method="POST">
+                <input type="hidden" name="id_num" value="{{student.0.0}}">
+                <input type="hidden" name="num" value="{{row.0}}">
+                <button class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </td>
+            <td>
+              {% if row.5=='a' %}
+                <span class="badge bg-success">Granted</span>
+              {% elif row.5=='b' %}
+                <span class="badge bg-info text-dark">Waiting for HoD</span>
+              {% elif row.5=='c' %}
+                <span class="badge bg-primary">Waiting for Faculty</span>
+              {% elif row.5=='r' %}
+                <span class="badge bg-secondary">Denied</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Waiting</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ------------------ HoD Portal ------------------ #}
+  {% elif faculty %}
+    {% if faculty.0.5=='y' %}
+      {# HoD View #}
+      <div class="container py-5">
+        <div class="row align-items-center">
+          <div class="col-md-7">
+            <h2 class="text-primary">Welcome HoD</h2>
+            <h1 class="fw-bold">{{faculty.0.0}}</h1>
+          </div>
+          <div class="col-md-5 text-center">
+            <img src="{{url_for('static', filename='university.png')}}" class="img-fluid" style="max-width:200px;">
+          </div>
+        </div>
+      </div>
+
+      <div class="container pb-5">
+        <div class="card shadow p-4">
+          <h3 class="mb-3">Check Faculty's Leave History</h3>
+          <form action="{{url_for('student_history')}}" method="POST" class="row g-3">
+            <input type="hidden" name="fac_id_num" value="{{faculty.0.0}}">
+            <div class="col-md-9">
+              <input class="form-control bg-warning-subtle" name="id_num" placeholder="Enter ID No.">
+            </div>
+            <div class="col-md-3 text-center">
+              <button class="btn btn-warning w-100">Check</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if student_data %}
+      <div class="container pb-5">
+        <h2 class="text-center text-primary mb-4">{{heading}}'s Leave History</h2>
+        <div class="table-responsive shadow rounded">
+          <table class="table table-striped align-middle bg-white">
+            <thead class="table-primary">
+              <tr>
+                <th>Leave ID</th>
+                <th>From Date</th>
+                <th>To Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in student_data %}
+              <tr>
+                <td>{{row.0}}</td>
+                <td>{{row.2}}</td>
+                <td>{{row.3}}</td>
+                <td>{{row.4}}</td>
+                <td>
+                  {% if row.5=='a' %}
+                    <span class="badge bg-success">Approved</span>
+                  {% elif row.5=='b' %}
+                    <span class="badge bg-primary">Waiting for HoD</span>
+                  {% elif row.5=='c' %}
+                    <span class="badge bg-info text-dark">Waiting for Faculty</span>
+                  {% elif row.5=='r' %}
+                    <span class="badge bg-danger">Rejected</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="container pb-5">
+        <h2 class="text-center text-primary mb-4">Leave Applications</h2>
+        <div class="table-responsive shadow rounded">
+          <table class="table table-striped align-middle bg-white">
+            <thead class="table-primary">
+              <tr>
+                <th>Leave ID</th>
+                <th>Faculty ID</th>
+                <th>From Date</th>
+                <th>To Date</th>
+                <th>Reason</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in applications %}
+              <tr>
+                <td>{{row.0}}</td>
+                <td>{{row.1}}</td>
+                <td>{{row.2}}</td>
+                <td>{{row.3}}</td>
+                <td>{{row.4}}</td>
+                <td>
+                  <div class="d-flex gap-2">
+                    <form action="{{url_for('grant')}}" method="POST" class="flex-fill">
+                      <input type="hidden" name="hod" value="{{faculty.0.5}}">
+                      <input type="hidden" name="fac_id_num" value="{{faculty.0.0}}">
+                      <input type="hidden" name="id_num" value="{{row.0}}">
+                      <textarea class="form-control bg-warning-subtle mb-2" name="comment" rows="2" placeholder="Comments"></textarea>
+                      <input type="hidden" name="flag" value="granted by HoD">
+                      <button class="btn btn-sm btn-primary w-100">Grant</button>
+                    </form>
+                    <form action="{{url_for('deny')}}" method="POST" class="flex-fill">
+                      <input type="hidden" name="hod" value="{{faculty.0.5}}">
+                      <input type="hidden" name="fac_id_num" value="{{faculty.0.0}}">
+                      <input type="hidden" name="id_num" value="{{row.0}}">
+                      <textarea class="form-control bg-warning-subtle mb-2" name="comment" rows="2" placeholder="Comments"></textarea>
+                      <input type="hidden" name="flag" value="denied by HoD">
+                      <button class="btn btn-sm btn-danger w-100">Deny</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    {% else %}
+      {# Faculty View #}
+      <!-- Similar improvements for faculty portal (tables, forms, etc.) -->
+      ...
+    {% endif %}
+  {% else %}
+    {# ------------------ Landing Page ------------------ #}
+    <div class="container py-5">
+      <div class="row align-items-center">
+        <div class="col-md-7 text-center text-md-start">
+          <h1 class="fw-bold text-primary">E-Leave Management Platform</h1>
+          <h3 class="text-muted">For university Faculties</h3>
+          <button type="button" class="btn btn-lg btn-outline-primary mt-4" data-bs-toggle="modal" data-bs-target="#loginModal">Get Started</button>
+        </div>
+        <div class="col-md-5 text-center">
+          <img src="{{url_for('static', filename='online-leave-management-system.png')}}" class="img-fluid">
+        </div>
+      </div>
+    </div>
+
+    <div class="container py-5">
+      <h2 class="text-center text-primary mb-5">Benefits</h2>
+      <div class="row text-center g-4">
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename='edit.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Paperless</h4>
+          <p>Removes manual efforts of writing leave letters and paperwork</p>
+        </div>
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename='earth.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Accessible</h4>
+          <p>Remotely accessible web application for all users</p>
+        </div>
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename='speedometer.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Efficient</h4>
+          <p>Delivers information quickly with a status dashboard</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container py-5">
+      <h2 class="text-center text-primary mb-5">Features</h2>
+      <div class="row text-center g-4">
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename='user.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Authentication</h4>
+          <p>Create accounts, login, change password, and logout</p>
+        </div>
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename='woman.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Faculty Portal</h4>
+          <p>Faculties can apply for leaves easily</p>
+        </div>
+        <div class="col-md-4">
+          <img src="{{url_for('static',filename='university.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Authorities</h4>
+          <p>Authorities can process and grant/deny leaves</p>
+        </div>
+      </div>
+      <div class="row text-center g-4 mt-4">
+        <div class="col-md-6">
+          <img src="{{url_for('static',filename='approval.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Status</h4>
+          <p>Leaves can be applied, cancelled, granted, or denied</p>
+        </div>
+        <div class="col-md-6">
+          <img src="{{url_for('static',filename='infographic.png')}}" class="mb-3" style="max-width:80px;">
+          <h4>Dashboard</h4>
+          <p>Students get a clear dashboard showing leave status</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+</body>
+</html>
