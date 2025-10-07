@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faculty-leave-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: faculty-leave
+  template:
+    metadata:
+      labels:
+        app: faculty-leave
+    spec:
+      containers:
+      - name: faculty-leave
+        image: facultyacr2f3f08.azurecr.io/faculty-leave-app:v1
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MYSQL_HOST
+          value: "mysql-faculty-leave.mysql.database.azure.com"
+        - name: MYSQL_USER
+          value: "facultyadmin"
+        - name: MYSQL_PASSWORD
+          value: "<your_mysql_password_here>"
+        - name: MYSQL_DB
+          value: "faculty_leave_db"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: faculty-leave-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: faculty-leave
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 5000
