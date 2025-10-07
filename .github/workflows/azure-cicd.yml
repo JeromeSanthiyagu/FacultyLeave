@@ -1,0 +1,42 @@
+name: Deploy Faculty Leave App to Azure AKS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  ACR_NAME: facultyacr2f3f08
+  AKS_RG: rg-faculty-leave
+  AKS_NAME: aks-faculty-leave
+  IMAGE_NAME: faculty-leave-app
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to ACR
+        run: az acr login --name $ACR_NAME
+
+      - name: Build Docker image
+        run: docker build . -t $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+      - name: Push image to ACR
+        run: docker push $ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+
+      - name: Set AKS context
+        run: az aks get-credentials --resource-group $AKS_RG --name $AKS_NAME --overwrite-existing
+
+      - name: Update Kubernetes deployment
+        run: |
+          kubectl set image deployment/faculty-leave-deployment faculty-leave=$ACR_NAME.azurecr.io/$IMAGE_NAME:latest
+          kubectl rollout status deployment/faculty-leave-deployment
