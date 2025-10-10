@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: faculty-leave
-        image: facultyacr2f3f08.azurecr.io/faculty-leave-app:v1
+        image: facultyacr2f3f08.azurecr.io/faculty-leave-app:v9
         ports:
         - containerPort: 5000
         env:
@@ -23,9 +23,13 @@ spec:
         - name: MYSQL_USER
           value: "facultyadmin"
         - name: MYSQL_PASSWORD
-          value: "<your_mysql_password_here>"
+          value: "Jerom@2004"
         - name: MYSQL_DB
-          value: "faculty_leave_db"
+          value: "faculty_leave"
+        - name: MYSQL_PORT
+          value: "3306"
+        - name: MYSQL_SSL_CA
+          value: "/etc/ssl/certs/DigiCertGlobalRootCA.crt.pem"
 ---
 apiVersion: v1
 kind: Service

@@ -10,11 +10,17 @@ import os
 app=Flask(__name__) 
 app.secret_key='flash message'
 
-# configuring database
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'localhost')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'college')
+#config database
+import os
+
+app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'mysql-faculty-leave.mysql.database.azure.com')
+app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'facultyadmin')
+app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'Jerom@2004')
+app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'faculty_leave')
+app.config['MYSQL_PORT'] = int(os.getenv('MYSQL_PORT', 3306))
+app.config['MYSQL_SSL_CA'] = '/etc/ssl/certs/ca-certificates.crt'
+
+
 
 mysql=MySQL(app)
 
