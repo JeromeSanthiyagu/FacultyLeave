@@ -171,96 +171,119 @@ def delete():
         return render_template('index.html', student=[[id_num,'checked']], previous=data)
 
 # leave grant function  
+# leave grant function
 @app.route('/grant', methods=["POST"])
 def grant():
-    if request.method=='POST':
-        fac_id_num=request.form['fac_id_num']
-        id_num=request.form['id_num']
-        hod= request.form['hod']
-        comment= request.form['comment']
-        flag= request.form['flag']
+    if request.method == 'POST':
+        # NOTE: 'num' is the application number used for UPDATE/SELECT
+        app_num = request.form['num'] 
+        fac_id_num = request.form['fac_id_num']
+        hod = request.form['hod']
+        comment = request.form['comment']
+        flag = request.form['flag'] # Status flag for email subject
 
-        cursor=mysql.connection.cursor()
-        cursor.execute("INSERT INTO comments VALUES (%s,%s)",(id_num,comment))
-        mysql.connection.commit()
+        cursor = mysql.connection.cursor()
+        
+        # 1. Insert comment (using app_num, which is 'num')
+        cursor.execute("INSERT INTO comments VALUES (%s,%s)", (app_num, comment))
 
-        if hod=='n':
-            cursor=mysql.connection.cursor()
-            cursor.execute("UPDATE leave_application SET status='b' WHERE num=%s",(id_num,))
-            mysql.connection.commit()
+        # 2. Update status based on HoD status
+        if hod == 'n':
+            # Update status to 'b' (Passed to HoD)
+            cursor.execute("UPDATE leave_application SET status='b' WHERE num=%s", (app_num,))
             flash("Leave passed to HoD!")
 
-        if hod=='y':
-            cursor=mysql.connection.cursor()
-            cursor.execute("UPDATE leave_application SET status='a' WHERE num=%s",(id_num,))
-            mysql.connection.commit()
+        if hod == 'y':
+            # Update status to 'a' (Approved)
+            cursor.execute("UPDATE leave_application SET status='a' WHERE num=%s", (app_num,))
             flash("Leave approved!")
         
-        cursor.execute("SELECT * FROM faculty WHERE id_num=%s",(fac_id_num,))
-        data=cursor.fetchone()
-        cursor.execute("SELECT num,id_num,from_date,to_date,reason,status FROM leave_application WHERE status='c'")
-        applications=cursor.fetchall()
-
-        cursor=mysql.connection.cursor()
-        cursor.execute("SELECT email from student_details where id_num=(SELECT id_num from leave_application where num=%s)",(id_num,))
-        receiver= cursor.fetchone()[0]
-        email_body="<html><body><b><h1 style='color:green;'>Leave "+flag+" !</h1></b><br><h2 style='color:blue;'>"+comment+"</h2></body></html>"
-        message= MIMEMultipart('alternative', None, [MIMEText(email_body,'html')])
-        message['Subject']="Leave Status"
-        message['From']= sender
-        message['To']= receiver
+        # COMMIT all database changes together
+        mysql.connection.commit()
+        
+        # 3. Fetch data for faculty dashboard refresh
+        cursor.execute("SELECT * FROM faculty WHERE id_num=%s", (fac_id_num,))
+        data = cursor.fetchone()
+        
+        # Select pending applications for dashboard refresh
+        cursor.execute("SELECT num,id_num,from_date,to_date,reason,status FROM leave_application WHERE status='c' or status='b'")
+        applications = cursor.fetchall()
+        
+        # 4. Email setup and send
+        # Get student email using the application number
+        cursor.execute("SELECT T1.email FROM student_details AS T1 JOIN leave_application AS T2 ON T1.id_num = T2.id_num WHERE T2.num=%s", (app_num,))
+        receiver = cursor.fetchone()[0]
+        
+        email_body = f"<html><body><b><h1 style='color:green;'>Leave {flag} !</h1></b><br><h2 style='color:blue;'>{comment}</h2></body></html>"
+        message = MIMEMultipart('alternative', None, [MIMEText(email_body, 'html')])
+        message['Subject'] = "Leave Status"
+        message['From'] = sender
+        message['To'] = receiver
+        
         try:
-            server= smtplib.SMTP('smtp.gmail.com:587')
+            server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
             server.starttls()
             server.login(sender, psswd)
             server.sendmail(sender, receiver, message.as_string())
             server.quit()
-        except:
-            print("Exception occurred!")
+        except Exception as e:
+            print(f"Exception occurred during email send: {e}")
+            
         cursor.close()
         return render_template("index.html", faculty=[data], applications=applications)
 
 # leave deny function
 @app.route("/deny", methods=["POST"])
 def deny():
-    if request.method=='POST':
-        fac_id_num=request.form['fac_id_num']
-        id_num=request.form['id_num']
-        comment= request.form['comment']
-        flag= request.form['flag']
+    if request.method == 'POST':
+        # NOTE: 'num' is the application number used for UPDATE/SELECT
+        app_num = request.form['num'] 
+        fac_id_num = request.form['fac_id_num']
+        comment = request.form['comment']
+        flag = request.form['flag'] # Status flag for email subject
 
-        cursor=mysql.connection.cursor()
-        cursor.execute("INSERT INTO comments VALUES (%s,%s)",(id_num,comment))
-        mysql.connection.commit()
-
-        cursor=mysql.connection.cursor()
-        cursor.execute("UPDATE leave_application SET status='r' WHERE num=%s",(id_num,))
+        cursor = mysql.connection.cursor()
+        
+        # 1. Insert comment
+        cursor.execute("INSERT INTO comments VALUES (%s,%s)", (app_num, comment))
+        
+        # 2. Update status to 'r' (Rejected)
+        cursor.execute("UPDATE leave_application SET status='r' WHERE num=%s", (app_num,))
+        
+        # COMMIT all database changes together
         mysql.connection.commit()
         flash("Leave rejected!")
         
-        cursor.execute("SELECT * FROM faculty WHERE id_num=%s",(fac_id_num,))
-        data=cursor.fetchone()
+        # 3. Fetch data for faculty dashboard refresh
+        cursor.execute("SELECT * FROM faculty WHERE id_num=%s", (fac_id_num,))
+        data = cursor.fetchone()
+        
+        # Select pending applications for dashboard refresh
         cursor.execute("SELECT num,id_num,from_date,to_date,reason,status FROM leave_application WHERE status='c' or status='b'")
-        applications=cursor.fetchall()
+        applications = cursor.fetchall()
 
-        cursor=mysql.connection.cursor()
-        cursor.execute("SELECT email from student_details where id_num=(SELECT id_num from leave_application where num=%s)",(id_num,))
-        receiver= cursor.fetchone()[0]
-        email_body="<html><body><b><h1 style='color:red;'>Leave "+flag+"!</b><br><h2 style='color:blue;'>"+comment+"</h2></body></html>"
-        message= MIMEMultipart('alternative', None, [MIMEText(email_body,'html')])
-        message['Subject']="Leave Status"
-        message['From']= sender
-        message['To']= receiver
+        # 4. Email setup and send
+        # Get student email using the application number
+        cursor.execute("SELECT T1.email FROM student_details AS T1 JOIN leave_application AS T2 ON T1.id_num = T2.id_num WHERE T2.num=%s", (app_num,))
+        receiver = cursor.fetchone()[0]
+
+        email_body = f"<html><body><b><h1 style='color:red;'>Leave {flag}!</b><br><h2 style='color:blue;'>{comment}</h2></body></html>"
+        message = MIMEMultipart('alternative', None, [MIMEText(email_body, 'html')])
+        message['Subject'] = "Leave Status"
+        message['From'] = sender
+        message['To'] = receiver
+        
         try:
-            server= smtplib.SMTP('smtp.gmail.com:587')
+            server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
             server.starttls()
             server.login(sender, psswd)
             server.sendmail(sender, receiver, message.as_string())
             server.quit()
-        except:
-            print("Exception occurred!")
+        except Exception as e:
+            print(f"Exception occurred during email send: {e}")
+            
         cursor.close()
         return render_template("index.html", faculty=[data], applications=applications)
 
