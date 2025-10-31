@@ -217,15 +217,15 @@ def grant():
         email_body = f"<html><body><b><h1 style='color:green;'>Leave {flag} !</h1></b><br><h2 style='color:blue;'>{comment}</h2></body></html>"
         message = MIMEMultipart('alternative', None, [MIMEText(email_body, 'html')])
         message['Subject'] = "Leave Status"
-        message['From'] = sender
+        message['From'] = SMTP_SENDER
         message['To'] = receiver
         
         try:
             server = smtplib.SMTP('smtp.gmail.com:587')
             server.ehlo()
             server.starttls()
-            server.login(sender, psswd)
-            server.sendmail(sender, receiver, message.as_string())
+            server.login(SMTP_SENDER, SMTP_PASSWORD)
+            server.sendmail(SMTP_SENDER, receiver, message.as_string())
             server.quit()
         except Exception as e:
             print(f"Exception occurred during email send: {e}")

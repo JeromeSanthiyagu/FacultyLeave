@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: faculty-leave
-        image: facultyacr2f3f08.azurecr.io/faculty-leave-app:v9
+        image: facultyacr2f3f08.azurecr.io/faculty-leave-app:v10
         ports:
         - containerPort: 5000
         env:
